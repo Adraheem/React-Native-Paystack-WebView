@@ -81,5 +81,8 @@
     "LICENSE",
     "package.json",
     "contributing.md"
-  ]
+  ],
+  "publishConfig": {
+    "access": "public"
+  }
 }
