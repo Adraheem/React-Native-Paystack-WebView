@@ -16,23 +16,19 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 24
-          cache: npm
+          cache: yarn
 
       - name: Install dependencies
-        # zustand + React 19 require legacy peer resolution.
-        run: npm install --legacy-peer-deps --no-audit --no-fund
+        run: yarn install --frozen-lockfile
 
       - name: Lint
-        run: npm run lint -- --max-warnings 0
+        run: yarn lint --max-warnings 0
 
       - name: Typecheck
-        run: npm run typecheck
+        run: yarn typecheck
 
       - name: Test
-        run: npm test -- --ci
+        run: yarn test --ci
 
       - name: Build
-        run: npm run build
-
-  # Release is intentionally not enabled yet — semantic-release + changelog are
-  # staged for a future iteration (see docs/DESIGN_DECISIONS.md#roadmap).
+        run: yarn build
