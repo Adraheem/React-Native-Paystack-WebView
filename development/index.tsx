@@ -1,10 +1,5 @@
-import { PaystackContext, PaystackProvider } from "./PaystackProvider"
-import { usePaystack } from "./usePaystack"
-import * as PaystackProps from './types'
+import { PaystackContext, PaystackProvider } from './PaystackProvider';
+import * as PaystackProps from './types';
+import { usePaystack } from './usePaystack';
 
-export {
-    PaystackProvider,
-    PaystackContext,
-    usePaystack,
-    PaystackProps
-}
+export { PaystackContext, PaystackProps, PaystackProvider, usePaystack };
