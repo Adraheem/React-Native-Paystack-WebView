@@ -104,7 +104,7 @@ export const PaystackProvider: React.FC<PaystackProviderProps> = ({
             generatePaystackParams(config),
             method
         );
-    }, [params, method]);
+    }, [params, method, publicKey, currency, defaultChannels, fallbackRef]);
 
     if (debug && visible) {
         console.log('[Paystack] HTML Injected:', paystackHTML);
