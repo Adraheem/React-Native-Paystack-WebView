@@ -3,6 +3,13 @@
   "version": "5.1.0",
   "description": "This package allows you to accept payment in your react native project using paystack ",
   "homepage": "https://github.com/Adraheem/React-Native-Paystack-WebView#readme",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Adraheem/React-Native-Paystack-WebView.git"
+  },
+  "bugs": {
+    "url": "https://github.com/Adraheem/React-Native-Paystack-WebView/issues"
+  },
   "main": "production/lib/index.js",
   "keywords": [
     "react-native",
