@@ -26,9 +26,9 @@ Modern, hook-based, Paystack-powered payments in React Native apps using WebView
 ## 🚀 Installation
 
 ```bash
-npm install react-native-paystack-webview
+npm install @adraheem/react-native-paystack-webview
 # or
-yarn add react-native-paystack-webview
+yarn add @adraheem/react-native-paystack-webview
 ```
 
 ### 📦 Peer Dependency
