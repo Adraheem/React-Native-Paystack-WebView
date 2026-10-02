@@ -11,8 +11,8 @@ import {
 
 const stringify = (value?: string): string | undefined => (value ? `'${value}'` : undefined);
 
-const objToStr = (value: ParamRecord) =>
-  Object.entries(value)
+const objToStr = (record: ParamRecord) =>
+  Object.entries(record)
     .map(([key, value]) => (value ? `${key}: ${value}` : undefined))
     .filter(Boolean)
     .join(',\n');

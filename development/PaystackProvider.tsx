@@ -45,23 +45,24 @@ export const PaystackProvider: React.FC<PaystackProviderProps> = ({
   const resolvedDeepLinkHosts = useMemo(() => [...DEFAULT_DEEP_LINK_HOSTS, ...deepLinkHosts], [deepLinkHosts]);
 
   const open = useCallback(
-    (params: Params, selectedMethod: PaystackMethod) => {
+    (incomingParams: Params, selectedMethod: PaystackMethod) => {
       if (debug) {
         console.log(`[Paystack] Opening modal with method: ${selectedMethod}`);
       }
-      if (!validateParams(params, selectedMethod, debug)) {
+      if (!validateParams(incomingParams, selectedMethod, debug)) {
         return;
       }
-      setParams(params);
+      setParams(incomingParams);
       setMethod(selectedMethod);
       setVisible(true);
     },
     [debug],
   );
 
-  const checkout = (params: PaystackParams) => open(params, 'checkout');
-  const newTransaction = (params: PaystackParams) => open(params, 'newTransaction');
-  const resumeTransaction = (params: PaystackResumeTransactionParams) => open(params, 'resumeTransaction');
+  const checkout = (incomingParams: PaystackParams) => open(incomingParams, 'checkout');
+  const newTransaction = (incomingParams: PaystackParams) => open(incomingParams, 'newTransaction');
+  const resumeTransaction = (incomingParams: PaystackResumeTransactionParams) =>
+    open(incomingParams, 'resumeTransaction');
 
   const close = () => {
     setVisible(false);
@@ -129,7 +130,7 @@ export const PaystackProvider: React.FC<PaystackProviderProps> = ({
               if (debug) {
                 console.log('[Paystack] Opening external/deep link via OS:', url);
               }
-              void openExternalUrl(url, debug);
+              openExternalUrl(url, debug).then();
               return false;
             }}
             javaScriptEnabled
