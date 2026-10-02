@@ -1,9 +1,15 @@
-import { validateParams, sanitize, generatePaystackParams, shouldHandleExternally, openExternalUrl } from '../development/utils';
 import { Alert, Linking } from 'react-native';
+import {
+  generatePaystackParams,
+  openExternalUrl,
+  sanitize,
+  shouldHandleExternally,
+  validateParams,
+} from '../development/utils';
 
 jest.mock('react-native', () => ({
   Alert: { alert: jest.fn() },
-  Linking: { canOpenURL: jest.fn(), openURL: jest.fn() }
+  Linking: { canOpenURL: jest.fn(), openURL: jest.fn() },
 }));
 
 describe('Paystack Utils', () => {
@@ -13,8 +19,8 @@ describe('Paystack Utils', () => {
         email: 'test@example.com',
         amount: 5000,
         onSuccess: jest.fn(),
-        onCancel: jest.fn()
-      }, false);
+        onCancel: jest.fn(),
+      }, 'checkout', false);
       expect(result).toBe(true);
     });
 
@@ -23,8 +29,8 @@ describe('Paystack Utils', () => {
         email: '',
         amount: 5000,
         onSuccess: jest.fn(),
-        onCancel: jest.fn()
-      }, true);
+        onCancel: jest.fn(),
+      }, 'checkout', true);
       expect(result).toBe(false);
       expect(Alert.alert).toHaveBeenCalledWith('Payment Error', expect.stringContaining('Email is required'));
     });
@@ -34,8 +40,8 @@ describe('Paystack Utils', () => {
         email: 'test@example.com',
         amount: 0,
         onSuccess: jest.fn(),
-        onCancel: jest.fn()
-      }, true);
+        onCancel: jest.fn(),
+      }, 'checkout', true);
       expect(result).toBe(false);
       expect(Alert.alert).toHaveBeenCalledWith('Payment Error', expect.stringContaining('Amount must be a valid number'));
     });
@@ -45,16 +51,24 @@ describe('Paystack Utils', () => {
         email: 'test@example.com',
         amount: 1000,
         onSuccess: undefined,
-        onCancel: undefined
-      } as any, true);
+        onCancel: undefined,
+      } as any, 'checkout', true);
       expect(result).toBe(false);
       expect(Alert.alert).toHaveBeenCalledWith('Payment Error', expect.stringContaining('onSuccess callback is required'));
+    });
+
+    it('should fail with missing accessCode', () => {
+      const result = validateParams({
+        accessCode: '',
+      }, 'resumeTransaction', true);
+      expect(result).toBe(false);
+      expect(Alert.alert).toHaveBeenCalledWith('Payment Error', expect.stringContaining('Access code is required'));
     });
   });
 
   describe('sanitize', () => {
     it('should wrap string by default', () => {
-      expect(sanitize('hello', '', true)).toBe("'hello'");
+      expect(sanitize('hello', '', true)).toBe('\'hello\'');
     });
 
     it('should return stringified object', () => {
@@ -72,42 +86,54 @@ describe('Paystack Utils', () => {
   describe('generatePaystackParams', () => {
     it('should generate JS object string with all fields', () => {
       const js = generatePaystackParams({
+        method: 'checkout',
         publicKey: 'pk_test',
         email: 'email@test.com',
         amount: 100,
         reference: 'ref123',
         metadata: { order: 123 },
         currency: 'NGN',
-        channels: ['card']
+        channels: ['card'],
       });
-      expect(js).toContain("key: 'pk_test'");
-      expect(js).toContain("email: 'email@test.com'");
-      expect(js).toContain("amount: 10000");
+      expect(js).toMatchObject({
+        'amount': 10000,
+        'channels': '["card"]',
+        'currency': "'NGN'",
+        'email': "'email@test.com'",
+        'invoice_limit': undefined,
+        'key': "'pk_test'",
+        'metadata': '{"order":123}',
+        'plan': undefined,
+        'reference': "'ref123'",
+        'split': undefined,
+        'split_code': undefined,
+        'subaccount': undefined,
+      });
     });
   });
 
   describe('shouldHandleExternally', () => {
     it('matches a string host by prefix', () => {
       expect(
-        shouldHandleExternally('https://joinzap.com/app/abc', ['https://joinzap.com/app/'])
+        shouldHandleExternally('https://joinzap.com/app/abc', ['https://joinzap.com/app/']),
       ).toBe(true);
     });
 
     it('does not match when only part of the URL contains the prefix', () => {
       expect(
-        shouldHandleExternally('https://evil.com/?u=https://joinzap.com/app/', ['https://joinzap.com/app/'])
+        shouldHandleExternally('https://evil.com/?u=https://joinzap.com/app/', ['https://joinzap.com/app/']),
       ).toBe(false);
     });
 
     it('matches a RegExp host', () => {
       expect(
-        shouldHandleExternally('mypartner://pay', [/^mypartner:\/\//])
+        shouldHandleExternally('mypartner://pay', [/^mypartner:\/\//]),
       ).toBe(true);
     });
 
     it('returns false when no host matches', () => {
       expect(
-        shouldHandleExternally('https://checkout.paystack.com/123', ['https://joinzap.com/app/'])
+        shouldHandleExternally('https://checkout.paystack.com/123', ['https://joinzap.com/app/']),
       ).toBe(false);
     });
 
