@@ -24,20 +24,35 @@ export type PaystackProviderProps = {
     onGlobalCancel?: () => void;
 };
 
-export type PaystackParams = {
+export interface PaystackCallbacks {
+    onSuccess: (data: PaystackTransactionResponse) => void;
+    onCancel: () => void;
+    onLoad?: (res: PaystackOnloadResponse) => void;
+    onError?: (res: any) => void;
+}
+
+export type PaystackParams = PaystackCallbacks & {
     email: string;
+    /** The amount of the transaction in major currency (e.g. Naira) */
     amount: number;
+    /** A valid object of extra information that you want to be saved to the transaction. To show this on the dashboard, see Seeing your metadata on the dashboard */
     metadata?: Record<string, any>;
+    /** The currency of the transaction. Available options in PaystackPop.CURRENCIES object */
+    currency?: Currency;
+    /**
+     * An array of payment channels to use.
+     * By default, all options available in PaystackPop.CHANNELS are used.
+     * `google_pay` has to be passed alongside `card`. On its own the transaction will not initialize.
+     * Pass `card` with `apple_pay` too, so customers whose device cannot use the wallet can still pay
+     */
+    channels?: PaymentChannels;
+    /** Unique case-sensitive transaction reference. Only -,., = and alphanumeric characters allowed. */
     reference?: string;
     plan?: string;
     invoice_limit?: number;
     subaccount?: string;
     split_code?: string;
     split?: DynamicMultiSplitProps;
-    onSuccess: (data: PaystackTransactionResponse) => void;
-    onCancel: () => void;
-    onLoad?: (res: PaystackOnloadResponse) => void;
-    onError?: (res: any) => void;
 };
 
 export type PaystackCheckoutParams = {
@@ -55,6 +70,10 @@ export type PaystackCheckoutParams = {
     onLoad?: (res: { id: string; accessCode: string; customer: Record<string, any> }) => void;
     onError?: (err: { message: string }) => void;
 };
+
+export interface PaystackResumeTransactionParams extends PaystackCallbacks{
+    accessCode: string;
+}
 
 export interface Response {
     status: string;
@@ -86,3 +105,9 @@ export interface DynamicMultiSplitProps {
     bearer_subaccount?: string;
     reference?: string;
 }
+
+export type PaystackMethod = 'checkout' | 'newTransaction' | 'resumeTransaction';
+
+export type ParamRecord = Record<string, string | number | undefined>
+
+export type GeneratePaystackParamsReturn = string | ParamRecord;

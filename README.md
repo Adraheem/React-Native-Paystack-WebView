@@ -11,6 +11,8 @@ Modern, hook-based, Paystack-powered payments in React Native apps using WebView
    <a href="#contributors-">
     <img src="https://img.shields.io/badge/all_contributors-9-orange.svg?style=flat-square" alt="All Contributors" />
   </a>
+
+<p>Forked from <a href="https://github.com/just1and0/React-Native-Paystack-WebView">just1and0/React-Native-Paystack-WebView</a></p>
   
 </center>
  
@@ -133,21 +135,32 @@ const Checkout = () => {
 
 ### `popup.checkout()` / `popup.newTransaction()`
 
-| Param         | Type                | Required | Description                               |
-|---------------|---------------------|----------|-------------------------------------------|
-| `email`       | `string`            | ✅       | Customer email                            |
-| `amount`      | `number`            | ✅       | Amount in Naira (not kobo)                |
-| `reference`   | `string`            | —        | Custom reference (optional)               |
-| `metadata`    | `object`            | —        | Custom fields / additional info           |
-| `plan`        | `string`            | —        | Paystack plan code (for subscriptions)    |
-| `invoice_limit` | `number`          | —        | Max charges during subscription           |
-| `subaccount`  | `string`            | —        | Subaccount code for split payment         |
-| `split_code`  | `string`            | —        | Multi-split identifier                    |
-| `split`       | `object`            | —        | Dynamic split object                      |
-| `onSuccess`   | `(res) => void`     | ✅       | Called on successful payment              |
-| `onCancel`    | `() => void`        | ✅       | Called on cancellation                    |
-| `onLoad`      | `(res) => void`     | —        | Triggered when transaction view loads     |
-| `onError`     | `(err) => void`     | —        | Triggered on WebView or script error      |
+| Param           | Type            | Required | Description                                                                                                                                                                                                                                                                                              |
+|-----------------|-----------------|----------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| `email`         | `string`        | ✅        | Customer email                                                                                                                                                                                                                                                                                           |
+| `amount`        | `number`        | ✅        | Amount in Naira (not kobo)                                                                                                                                                                                                                                                                               |
+| `currency`      | `string`        | —        | The currency of the transaction. One of `NGN`, `GHS`, `USD`, `ZAR`, `KES`, `XOF`                                                                                                                                                                                                                                     |
+| `channels`      | `string[]`      | —        | An array of payment channels to use. By default, all options available in PaystackPop.CHANNELS are used. `google_pay` has to be passed alongside `card`. On its own the transaction will not initialize. Pass `card` with `apple_pay` too, so customers whose device cannot use the wallet can still pay |
+| `reference`     | `string`        | —        | Custom reference (optional)                                                                                                                                                                                                                                                                              |
+| `metadata`      | `object`        | —        | Custom fields / additional info                                                                                                                                                                                                                                                                          |
+| `plan`          | `string`        | —        | Paystack plan code (for subscriptions)                                                                                                                                                                                                                                                                   |
+| `invoice_limit` | `number`        | —        | Max charges during subscription                                                                                                                                                                                                                                                                          |
+| `subaccount`    | `string`        | —        | Subaccount code for split payment                                                                                                                                                                                                                                                                        |
+| `split_code`    | `string`        | —        | Multi-split identifier                                                                                                                                                                                                                                                                                   |
+| `split`         | `object`        | —        | Dynamic split object                                                                                                                                                                                                                                                                                     |
+| `onSuccess`     | `(res) => void` | ✅        | Called on successful payment                                                                                                                                                                                                                                                                             |
+| `onCancel`      | `() => void`    | ✅        | Called on cancellation                                                                                                                                                                                                                                                                                   |
+| `onLoad`        | `(res) => void` | —        | Triggered when transaction view loads                                                                                                                                                                                                                                                                    |
+| `onError`       | `(err) => void` | —        | Triggered on WebView or script error                                                                                                                                                                                                                                                                     |
+
+### 🆕 `popup.resumeTransaction()`
+| Param        | Type            | Required   | Description          |
+|--------------|-----------------|----------|-------------------------------------------|
+| `accessCode` | `string`        | ✅       | Access code created on the API via the transaction/initialize endpoint  |
+| `onSuccess`  | `(res) => void` | ✅       | Called on successful payment              |
+| `onCancel`   | `() => void`    | ✅       | Called on cancellation                    |
+| `onLoad`     | `(res) => void` | —        | Triggered when transaction view loads     |
+| `onError`    | `(err) => void` | —        | Triggered on WebView or script error      |
 
 ---
 

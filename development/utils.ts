@@ -1,13 +1,45 @@
 import { Alert, Linking } from 'react-native';
-import { Currency, DynamicMultiSplitProps, PaymentChannels, PaystackParams, PaystackTransactionResponse } from './types';
+import {
+  GeneratePaystackParamsReturn,
+  ParamRecord,
+  PaystackMethod,
+  PaystackParams,
+  PaystackResumeTransactionParams,
+  PaystackTransactionResponse,
+} from './types';
+
+const stringify = (value?: string): string | undefined => value ? `'${value}'` : undefined;
+
+const objToStr = (value: ParamRecord) =>
+  Object.entries(value)
+    .map(([key, value]) => value ? `${key}: ${value}` : undefined)
+    .filter(Boolean)
+    .join(',\n');
+
+const CALLBACKS = {
+  onSuccess: `function(response) {
+        window.ReactNativeWebView.postMessage(JSON.stringify({ event: 'success', data: response }));
+      }`,
+  onCancel: `function() {
+        window.ReactNativeWebView.postMessage(JSON.stringify({ event: 'cancel' }));
+      }`,
+  onLoad: `function(response) {
+        window.ReactNativeWebView.postMessage(JSON.stringify({ event: 'load', data: response }));
+      }`,
+  onError: `function(error) {
+        window.ReactNativeWebView.postMessage(JSON.stringify({ event: 'error', error: { message: error.message } }));
+      }`,
+};
+
+type CallbackKeys = keyof typeof CALLBACKS;
 
 export const shouldHandleExternally = (
   url: string,
-  hosts: Array<string | RegExp>
+  hosts: Array<string | RegExp>,
 ): boolean =>
   !!url &&
   hosts.some((matcher) =>
-    typeof matcher === 'string' ? url.indexOf(matcher) === 0 : matcher.test(url)
+    typeof matcher === 'string' ? url.indexOf(matcher) === 0 : matcher.test(url),
   );
 
 export const openExternalUrl = async (url: string, debug = false): Promise<void> => {
@@ -23,11 +55,17 @@ export const openExternalUrl = async (url: string, debug = false): Promise<void>
   }
 };
 
-export const validateParams = (params: PaystackParams, debug: boolean): boolean => {
+export const validateParams = (params: PaystackParams | PaystackResumeTransactionParams, method: PaystackMethod, debug: boolean): boolean => {
   const errors: string[] = [];
-  if (!params.email) errors.push('Email is required');
-  if (!params.amount || typeof params.amount !== 'number' || params.amount <= 0) {
-    errors.push('Amount must be a valid number greater than 0');
+  if(method === 'resumeTransaction'){
+    const resumeTransactionParams = params as PaystackResumeTransactionParams;
+    if(!resumeTransactionParams.accessCode) errors.push('Access code is required');
+  } else {
+    const otherParams = params as PaystackParams;
+    if (!otherParams.email) errors.push('Email is required');
+    if (!otherParams.amount || typeof otherParams.amount !== 'number' || otherParams.amount <= 0) {
+      errors.push('Amount must be a valid number greater than 0');
+    }
   }
   if (!params.onSuccess || typeof params.onSuccess !== 'function') {
     errors.push('onSuccess callback is required and must be a function');
@@ -47,7 +85,7 @@ export const validateParams = (params: PaystackParams, debug: boolean): boolean 
 export const sanitize = (
   value: unknown,
   fallback: string | number | object,
-  wrapString = true
+  wrapString = true,
 ): string => {
   try {
     if (typeof value === 'string') return wrapString ? `'${value}'` : value;
@@ -58,16 +96,16 @@ export const sanitize = (
 };
 
 export const handlePaystackMessage = ({
-  event,
-  debug,
-  params,
-  onGlobalSuccess,
-  onGlobalCancel,
-  close,
-}: {
+                                        event,
+                                        debug,
+                                        params,
+                                        onGlobalSuccess,
+                                        onGlobalCancel,
+                                        close,
+                                      }: {
   event: any;
   debug: boolean;
-  params: PaystackParams | null;
+  params: Pick<PaystackParams, CallbackKeys> | null;
   onGlobalSuccess?: (data: PaystackTransactionResponse) => void;
   onGlobalCancel?: () => void;
   close?: () => void;
@@ -106,54 +144,56 @@ export const handlePaystackMessage = ({
   }
 };
 
-export const generatePaystackParams = (config: {
-  publicKey: string;
-  email: string;
-  amount: number;
-  reference: string;
-  metadata?: object;
-  currency?: Currency;
-  channels: PaymentChannels;
-  plan?: string;
-  invoice_limit?: number;
-  subaccount?: string;
-  split_code?: string;
-  split?: DynamicMultiSplitProps;
-}): string => {
-  const props = [
-    `key: '${config.publicKey}'`,
-    `email: '${config.email}'`,
-    `amount: ${config.amount * 100}`,
-    config.currency ? `currency: '${config.currency}'` : '',
-    `reference: '${config.reference}'`,
-    config.metadata ? `metadata: ${JSON.stringify(config.metadata)}` : '',
-    config.channels ? `channels: ${JSON.stringify(config.channels)}` : '',
-    config.plan ? `plan: '${config.plan}'` : '',
-    config.invoice_limit ? `invoice_limit: ${config.invoice_limit}` : '',
-    config.subaccount ? `subaccount: '${config.subaccount}'` : '',
-    config.split_code ? `split_code: '${config.split_code}'` : '',
-    config.split ? `split: ${JSON.stringify(config.split)}` : '',
-    `onSuccess: function(response) {
-        window.ReactNativeWebView.postMessage(JSON.stringify({ event: 'success', data: response }));
-      }`,
-    `onCancel: function() {
-        window.ReactNativeWebView.postMessage(JSON.stringify({ event: 'cancel' }));
-      }`,
-    `onLoad: function(response) {
-        window.ReactNativeWebView.postMessage(JSON.stringify({ event: 'load', data: response }));
-      }`,
-    `onError: function(error) {
-        window.ReactNativeWebView.postMessage(JSON.stringify({ event: 'error', error: { message: error.message } }));
-      }`
-  ];
+type CheckoutParams = Omit<PaystackParams, CallbackKeys> & { publicKey: string, method: 'checkout' | 'newTransaction' }
 
-  return props.filter(Boolean).join(',\n');
+const generateCheckoutParams = (config: CheckoutParams) => ({
+  key: stringify(config.publicKey),
+  email: stringify(config.email),
+  amount: config.amount * 100,
+  currency: stringify(config.currency),
+  reference: stringify(config.reference),
+  metadata: JSON.stringify(config.metadata),
+  channels: JSON.stringify(config.channels),
+  plan: stringify(config.plan),
+  invoice_limit: config.invoice_limit,
+  subaccount: stringify(config.subaccount),
+  split_code: stringify(config.split_code),
+  split: JSON.stringify(config.split),
+});
+
+type ResumeTransactionParams = Omit<PaystackResumeTransactionParams, CallbackKeys> & { method: 'resumeTransaction' }
+
+const generateResumeTransactionParams = (config: ResumeTransactionParams) => config.accessCode;
+
+export const generatePaystackParams = (config: CheckoutParams | ResumeTransactionParams): GeneratePaystackParamsReturn => {
+  switch (config.method) {
+    case 'resumeTransaction':
+      return generateResumeTransactionParams(config);
+
+    default:
+      return generateCheckoutParams(config);
+  }
 };
 
 export const paystackHtmlContent = (
-  params: string,
-  method: 'checkout' | 'newTransaction' = 'checkout'
-): string => `
+  params: GeneratePaystackParamsReturn,
+  method: PaystackMethod = 'checkout',
+): string => {
+  let invokeFn;
+
+  if (method === 'resumeTransaction') {
+    invokeFn = `
+    paystack.resumeTransaction('${params as string}', {${objToStr(CALLBACKS)}});
+    `;
+  } else {
+    invokeFn = `
+    paystack.${method}({
+    ${objToStr({ ...(params as ParamRecord), ...CALLBACKS })}
+    });
+    `;
+  }
+
+  return `
     <!DOCTYPE html>
     <html lang="en">
     <head>
@@ -165,12 +205,11 @@ export const paystackHtmlContent = (
       <script src="https://js.paystack.co/v2/inline.js"></script>
       <script>
         function payWithPaystack() {
-          var paystack = new PaystackPop();
-          paystack.${method}({
-            ${params}
-          });
+          const paystack = new PaystackPop();
+          ${invokeFn}
         }
       </script>
     </body>
     </html>
   `;
+};
