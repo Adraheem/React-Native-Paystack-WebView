@@ -27,3 +27,5 @@ jobs:
 
       - name: Publish package to npm
         uses: JS-DevTools/npm-publish@v4
+        with:
+          tag: latest
