@@ -1,6 +1,6 @@
 import React, { createContext, useCallback, useMemo, useState } from 'react';
-import { ActivityIndicator, Modal } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { ActivityIndicator, Modal, View } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { WebView, WebViewMessageEvent } from 'react-native-webview';
 
 import { styles } from './styles';
@@ -36,6 +36,7 @@ export const PaystackProvider: React.FC<PaystackProviderProps> = ({
   onGlobalSuccess,
   onGlobalCancel,
 }) => {
+  const { top, bottom } = useSafeAreaInsets();
   const [visible, setVisible] = useState(false);
   const [params, setParams] = useState<Params | null>(null);
   const [method, setMethod] = useState<PaystackMethod>('checkout');
@@ -117,7 +118,7 @@ export const PaystackProvider: React.FC<PaystackProviderProps> = ({
     <PaystackContext.Provider value={{ popup: { checkout, newTransaction, resumeTransaction } }}>
       {children}
       <Modal visible={visible} transparent animationType="slide">
-        <SafeAreaView style={styles.container}>
+        <View style={[styles.container, { paddingTop: top, paddingBottom: bottom }]}>
           <WebView
             originWhitelist={['*']}
             source={{ html: paystackHTML }}
@@ -140,7 +141,7 @@ export const PaystackProvider: React.FC<PaystackProviderProps> = ({
             onLoadEnd={() => debug && console.log('[Paystack] WebView Load End')}
             renderLoading={() => <ActivityIndicator size="large" />}
           />
-        </SafeAreaView>
+        </View>
       </Modal>
     </PaystackContext.Provider>
   );
